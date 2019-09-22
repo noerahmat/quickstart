@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
 # Install Terrafrom and Kops in Ubuntu 18.04
+# if in centos repleace apt to yum
+# awscli_setup set aws configure !!!!!
 
 # Install Jq
 
-sudo apt-get --yes update \
-&& sudo apt-get --yes install jq \
-&& sudo apt-get --yes install unzip || log "ERROR: Failed update" $?
+sudo apt --yes update \
+&& sudo apt --yes install jq \
+&& sudo apt --yes install unzip || log "ERROR: Failed update" $?
 
 KOPS_FLAVOR="kops-linux-amd64"
 KOPS_VERSION=$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)
@@ -17,6 +19,8 @@ KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/${KUBECTL
 
 TERRAFORM_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r -M '.current_version')
 TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+#TERRAFORM_VERSION=0.12.9
+#TERRAFORM_URL="https://releases.hashicorp.com/terraform/0.12.9/terraform_0.12.9_linux_amd64.zip"
 
 log()
 {
@@ -52,8 +56,7 @@ kops_setup(){
 
     log "INFO: Kops setup done -> Version : ${KOPS_VERSION} and Flavor: ${KOPS_FLAVOR}"
 
-    echo "======================================================================================"
-    kubectl_setup
+
 
 }
 
@@ -86,7 +89,7 @@ terraform_setup(){
     log "INFO: Download Terraform -> Version ${TERRAFORM_VERSION}"
     curl -sLO ${TERRAFORM_URL} || log  "ERROR: Downlaod failed" $?
     log "INFO: Download Complete"
-
+	
     unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip || log "ERROR: Unzipping terraform_${TERRAFORM_VERSION}_linux_amd64.zip" $?
 
     chmod +x terraform || log "ERROR: Cant set the executable permission" $?
@@ -100,6 +103,21 @@ terraform_setup(){
         log "ERROR: /usr/local/bin Directory Not found"
 
     fi
+}
+
+
+#Download and Setup awscli
+awscli_setup(){
+
+sudo apt update 
+sudo apt install awscli --yes 
+
+aws configure set aws_access_key_id XXXXXXXXXXXXXXXX
+aws configure set aws_secret_access_key ZZZZZZZZZZZZZZZ
+aws configure set default.region ap-southeast-1
+aws configure set default.output_format json
+
+
 }
 
 verify_install(){
@@ -129,8 +147,15 @@ echo "==========================================================================
 kops_setup
 sleep 2
 echo "======================================================================================"
+kubectl_setup
+echo "======================================================================================"
 terraform_setup
 sleep 2
+
+echo "======================================================================================"
+awscli_setup
+sleep 2
+
 echo "======================================================================================"
 verify_install
 echo "======================================================================================"
